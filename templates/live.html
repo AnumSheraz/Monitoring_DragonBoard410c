@@ -1,1 +1,184 @@
 
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="">
+    <title>DragonBoard Monitor</title>
+
+  <body onload="keep_alive()">
+
+<style>
+table, th, td {
+    border: 2px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+}
+</style>
+
+	<div class="well roughdata" id="rough_data_div" >
+       <h1> My DragonBoard </h1> 
+       <hr>	 
+	   <h3>Computation:</h3>
+         <h5>Number of Cores:<span id="cores_id">...</span></h5>
+		 <h5>CPU Usage:<span id="CPU_id">...</span></h5>
+         <h5>Memory Usage:<span id="memory_id">...</span></h5>
+	   <hr>
+	   <h3>Networks:</h3>
+         <h5>Bluetooth:<span id="bluetooth_id">...</span></h5>
+         <h5>Location Service:<span id="location_id">...</span></h5>
+         <h5>Wifi status:<span id="wifi_status_id">...</span></h5>	   
+	     <h5>Wifi SSID:<span id="wifi_ssid_id">...</span></h5>	
+	   
+	   <hr>
+	   <h3>GPIO:</h3>
+         <table style="width:100%">
+		  <tr>
+			<th>Pin number</th>
+			<th>value</th>		
+			<th>direction</th>
+		  </tr>
+		  <tr>
+			<td>23</td>
+			<td><span id="23_value_id"></span></td>		
+			<td> <span id="23_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>24</td>
+			<td><span id="24_value_id"></span></td>		
+			<td> <span id="24_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>25</td>
+			<td><span id="25_value_id"></span></td>		
+			<td> <span id="25_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>26</td>
+			<td><span id="26_value_id"></span></td>		
+			<td> <span id="26_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>27</td>
+			<td><span id="27_value_id"></span></td>		
+			<td> <span id="27_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>28</td>
+			<td><span id="28_value_id"></span></td>		
+			<td> <span id="28_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>29</td>
+			<td><span id="29_value_id"></span></td>		
+			<td> <span id="29_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>30</td>
+			<td><span id="30_value_id"></span></td>		
+			<td> <span id="30_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>31</td>
+			<td><span id="31_value_id"></span></td>		
+			<td> <span id="31_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>32</td>
+			<td><span id="32_value_id"></span></td>		
+			<td> <span id="32_dir_id"></span>  </td>
+		  </tr>
+		  <tr>
+			<td>33</td>
+			<td><span id="33_value_id"></span></td>		
+			<td> <span id="33_dir_id"></span>  </td>
+		  </tr>
+
+		</table>
+				   
+		<hr>	 
+			 <h3>Peripherals:</h3>
+			 <h5>USB Device:<span id="USB_id">...</span></h5>
+
+		<hr>
+			 <h5>last update:<span id="last_update_id">...</span></h5>
+
+
+ </div>
+  <script>   
+	function keep_alive(){
+
+	    var request = new XMLHttpRequest();
+	    request.onreadystatechange = function(){  //receiving responce from server
+	      if(this.readyState === 4){  // checks
+                if (this.status === 200) {   //check
+                  if (this.responseText !== null) {  //
+					  var json_data=this.responseText;
+					  var json_obj=JSON.parse(json_data);
+					  document.getElementById("cores_id").innerHTML = json_obj.status["Computation"].Cores;
+					  document.getElementById("CPU_id").innerHTML = json_obj.status["Computation"].CPU_Usage;
+					  document.getElementById("memory_id").innerHTML = json_obj.status["Computation"].Memory_usage;
+					  document.getElementById("bluetooth_id").innerHTML = json_obj.status["Networks"].Bluetooth;
+					  document.getElementById("location_id").innerHTML = json_obj.status["Networks"].Location_Service;
+					  document.getElementById("wifi_status_id").innerHTML = json_obj.status["Networks"]["Wifi"].status;
+					  document.getElementById("wifi_ssid_id").innerHTML = json_obj.status["Networks"]["Wifi"].SSID;
+					  
+					  document.getElementById("23_value_id").innerHTML = json_obj.status.GPIO[0].value;
+					  document.getElementById("23_dir_id").innerHTML = json_obj.status.GPIO[0].Direction;
+					  
+					  document.getElementById("24_value_id").innerHTML = json_obj.status.GPIO[1].value;
+					  document.getElementById("24_dir_id").innerHTML = json_obj.status.GPIO[1].Direction;
+					  
+					  document.getElementById("25_value_id").innerHTML = json_obj.status.GPIO[2].value;
+					  document.getElementById("25_dir_id").innerHTML = json_obj.status.GPIO[2].Direction;
+					  
+					  document.getElementById("26_value_id").innerHTML = json_obj.status.GPIO[3].value;
+					  document.getElementById("26_dir_id").innerHTML = json_obj.status.GPIO[3].Direction;
+					  
+					  document.getElementById("27_value_id").innerHTML = json_obj.status.GPIO[4].value;
+					  document.getElementById("27_dir_id").innerHTML = json_obj.status.GPIO[4].Direction;
+					  
+					  document.getElementById("28_value_id").innerHTML = json_obj.status.GPIO[5].value;
+					  document.getElementById("28_dir_id").innerHTML = json_obj.status.GPIO[5].Direction;
+					  
+					  document.getElementById("29_value_id").innerHTML = json_obj.status.GPIO[6].value;
+					  document.getElementById("29_dir_id").innerHTML = json_obj.status.GPIO[6].Direction;
+					  
+					  document.getElementById("30_value_id").innerHTML = json_obj.status.GPIO[7].value;
+					  document.getElementById("30_dir_id").innerHTML = json_obj.status.GPIO[7].Direction;
+					  
+					  document.getElementById("31_value_id").innerHTML = json_obj.status.GPIO[8].value;
+					  document.getElementById("31_dir_id").innerHTML = json_obj.status.GPIO[8].Direction;
+					  
+					  document.getElementById("32_value_id").innerHTML = json_obj.status.GPIO[9].value;
+					  document.getElementById("32_dir_id").innerHTML = json_obj.status.GPIO[9].Direction;
+					  
+					  document.getElementById("33_value_id").innerHTML = json_obj.status.GPIO[10].value;
+					  document.getElementById("33_dir_id").innerHTML = json_obj.status.GPIO[10].Direction;
+					  
+					  document.getElementById("USB_id").innerHTML = json_obj.status["Peripherals"]["USB"][0].Device;
+					  
+					  document.getElementById("last_update_id").innerHTML = json_obj.status["Last_update"];
+	                  
+                    }
+	            }
+			}
+	    };
+	    request.open("POST","update_status", true);   //making the request body.
+	    request.send(null);
+	    setTimeout('keep_alive()',200);
+	   }
+
+    	   
+ 
+ </script> 
+
+
+  </body>
+</html>
