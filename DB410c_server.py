@@ -283,6 +283,7 @@ def green_led(times):
                 print 'green high ' + str(n+1)
                 time.sleep(0.5)
                 Pin23.high()
+                my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue() 
                 time.sleep(0.5)
                 Pin23.low()
                 my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue()  
