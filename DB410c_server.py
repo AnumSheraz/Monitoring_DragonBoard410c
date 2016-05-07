@@ -2,14 +2,14 @@
 """
 Created on Tue Apr  5 15:27:38 2016
 
-@author: root
+@author: Anum Sheraz
 """
 
 import json, time, psutil
 from flask import render_template, request
 import flask, socket
 import threading
-from wifi import Cell, Scheme
+from wifi import Cell
 from GPIOLibrary import GPIOProcessor
 
 GP = GPIOProcessor()
@@ -17,8 +17,8 @@ GP = GPIOProcessor()
 app = flask.Flask(__name__)
 
 ipaddress=socket.gethostbyname(socket.gethostname())
-
-PORT_NUMBER = 80
+print ipaddress
+PORT_NUMBER = 8040
 count = 0
 red_led_T_lock = threading.Lock()
 yellow_led_T_lock = threading.Lock()
@@ -136,11 +136,9 @@ def keep_alive():
     
 @app.route("/", methods=['GET','POST'])
 def login():
-    #error = None
     #print 'HELLO DragonBoard' 
     if request.args.get('led'):
         led=request.args.get('led')
-        #print 'LED:', led,
         if request.args.get('times'):
            times=request.args.get('times')
            print ' times:', times
@@ -153,7 +151,7 @@ def login():
            return flask.jsonify(**led_json) 
     else:
         print 'got no LED'    
-        return render_template('Hello.html')#, error = error)  
+        return render_template('Hello.html')
 
 @app.route("/status")
 def status():
@@ -179,16 +177,13 @@ def live():
 def processes():
     global my_dict
     while 1:
-        #print 'hello' 
         time.sleep(0.05)
         my_dict["status"]["Computation"]["Cores"] = psutil.NUM_CPUS
         CPU_raw = psutil.cpu_percent()
         if CPU_raw != 0:
            CPU_Usage = (CPU_raw/(100))*100
-           #print 'CPU:', CPU_Usage
            my_dict["status"]["Computation"]["CPU_Usage"] = str(CPU_Usage) + "%"
         RAM = psutil.virtual_memory()
-        #print RAM[2]
         my_dict["status"]["Computation"]["Memory_usage"] = str(RAM[2]) + "%"
         
 
@@ -207,7 +202,7 @@ def LED_control(led,time):
              
       if led == 'yellow':
          time = int(time)
-        # yellow_thread = threading.Thread(target=yellow_led, args=(time,))
+        
          if yellow_led_T_lock.locked() == False:
                 yellow_thread = threading.Thread(target=yellow_led, args=(time,))
                 yellow_thread.start()
@@ -217,11 +212,10 @@ def LED_control(led,time):
              
       if led == 'green':
          time = int(time)
-         #green_thread = threading.Thread(target=green_led, args=(time,))
+         
          if green_led_T_lock.locked() == False:
               green_thread = threading.Thread(target=green_led, args=(time,))           
               green_thread.start()
-              #print 'green thread started'
               return 'ok'
          else:
             return 'green LED already in use'
@@ -254,7 +248,6 @@ def red_led(times):
             Pin25.low() 
             my_dict["status"]["GPIO"][2]["value"] = Pin25.getValue()  
       finally:
-          Pin25.input()
           Pin25.closePin()      
           red_led_T_lock.release() 
            
@@ -274,7 +267,6 @@ def yellow_led(times):
             Pin24.low() 
             my_dict["status"]["GPIO"][1]["value"] = Pin24.getValue()  
       finally:
-          Pin24.input()
           Pin24.closePin()      
           yellow_led_T_lock.release() 
          
@@ -288,14 +280,10 @@ def green_led(times):
                 print 'green high ' + str(n+1)
                 time.sleep(0.5)
                 Pin23.high()
-                my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue()  
-                #gpio.digital_write(GPIO_green, GPIO.HIGH)
                 time.sleep(0.5)
                 Pin23.low()
                 my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue()  
-                #gpio.digital_write(GPIO_green, GPIO.LOW)
       finally:
-          Pin23.input()
           Pin23.closePin()      
           green_led_T_lock.release() 
  
@@ -305,5 +293,4 @@ if __name__ == '__main__':
      get_data = threading.Thread(target=processes)
      get_data.start()
 
-     app.run("localhost", threaded=True, debug=False, port=8000)
-     #print 'Started httpserver on port ' , PORT_NUMBER
+     app.run("192.168.1.15", threaded=True, debug=False, port=80)
