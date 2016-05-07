@@ -9,7 +9,10 @@ import json, time, psutil
 from flask import render_template, request
 import flask, socket
 import threading
+from wifi import Cell, Scheme
+from GPIOLibrary import GPIOProcessor
 
+GP = GPIOProcessor()
 
 app = flask.Flask(__name__)
 
@@ -20,6 +23,8 @@ count = 0
 red_led_T_lock = threading.Lock()
 yellow_led_T_lock = threading.Lock()
 green_led_T_lock = threading.Lock()
+ 
+
 
 my_dict={
           "status":{
@@ -105,9 +110,22 @@ my_dict={
                     "Last_update":"time"                           
                  }
         }
+        
+try:
+  a=Cell.all('wlan0')
+  if len(a) > 0:
+        ssid = a[0]       #Cell(ssid=Maxcotec)
+        ssid = str(ssid)
+        ssid = ssid[10:ssid.index(")")]        
+        my_dict["status"]["Networks"]["Wifi"]["SSID"] = ssid
+        my_dict["status"]["Networks"]["Wifi"]["status"] = "Connected"
+  else:
+        my_dict["status"]["Networks"]["Wifi"]["SSID"] = "--"   
+        my_dict["status"]["Networks"]["Wifi"]["status"] = "Not Connected" 
+except Exception as e:
+    print e
 
-#s=my_dict["status"]
-#print my_dict["status"].get("Computation")
+
 @app.route('/status/update_status', methods=['POST'])
 def keep_alive():
     global my_dict
@@ -141,6 +159,8 @@ def login():
 def status():
     global my_dict
     my_dict["status"]["Last_update"] = (time.ctime())
+    
+ 
     parsed_json = json.dumps(my_dict ,indent=4,  separators=(',', ':'), sort_keys=True)     
     print parsed_json
     return (parsed_json)
@@ -152,14 +172,15 @@ def preety():
     return flask.jsonify(**my_dict)                
 
 @app.route("/status/live")
-def live(): 
+def live():
+    print 'sending live.html'
     return render_template('live.html') 
 
 def processes():
     global my_dict
     while 1:
-        #print 'hello'
-        time.sleep(1)
+        #print 'hello' 
+        time.sleep(0.05)
         my_dict["status"]["Computation"]["Cores"] = psutil.NUM_CPUS
         CPU_raw = psutil.cpu_percent()
         if CPU_raw != 0:
@@ -170,104 +191,119 @@ def processes():
         #print RAM[2]
         my_dict["status"]["Computation"]["Memory_usage"] = str(RAM[2]) + "%"
         
+
+        
 def LED_control(led,time):
+     
       global red_led_T_lock, green_led_T_lock, yellow_led_T_lock
       if led == 'red':
          time = int(time)
-         red_thread = threading.Thread(target=red_led, args=(time,))
-         if red_led_T_lock.locked() == False:
-            red_thread.start()
-            return 'ok'
+         if red_led_T_lock.locked() == False:   
+                red_thread = threading.Thread(target=red_led, args=(time,)) 
+                red_thread.start()
+                return 'ok'
          else:
             return 'red LED already in use'
              
       if led == 'yellow':
          time = int(time)
-         yellow_thread = threading.Thread(target=yellow_led, args=(time,))
+        # yellow_thread = threading.Thread(target=yellow_led, args=(time,))
          if yellow_led_T_lock.locked() == False:
-            yellow_thread.start()
-            return 'ok'
+                yellow_thread = threading.Thread(target=yellow_led, args=(time,))
+                yellow_thread.start()
+                return 'ok'
          else:
             return 'yellow LED already in use'
              
       if led == 'green':
          time = int(time)
-         green_thread = threading.Thread(target=green_led, args=(time,))
+         #green_thread = threading.Thread(target=green_led, args=(time,))
          if green_led_T_lock.locked() == False:
-            green_thread.start()
-            #print 'green thread started'
-            return 'ok'
+              green_thread = threading.Thread(target=green_led, args=(time,))           
+              green_thread.start()
+              #print 'green thread started'
+              return 'ok'
          else:
             return 'green LED already in use'
              
       if led == 'all':
          time = int(time)
-         red_thread = threading.Thread(target=red_led, args=(time,))
-         yellow_thread = threading.Thread(target=yellow_led, args=(time,))
-         green_thread = threading.Thread(target=green_led, args=(time,))
+
          if red_led_T_lock.locked() == False and green_led_T_lock.locked() == False and yellow_led_T_lock.locked() == False:
-            red_thread.start()
-            green_thread.start()
-            yellow_thread.start()
-            return 'ok'
+               red_thread = threading.Thread(target=red_led, args=(time,))
+               yellow_thread = threading.Thread(target=yellow_led, args=(time,))
+               green_thread = threading.Thread(target=green_led, args=(time,))                
+               red_thread.start()
+               green_thread.start()
+               yellow_thread.start()
+               return 'ok'
          else:
              return 'All LED\'s are already in use'
       
 def red_led(times):
-      global red_led_T_lock
+      Pin25 = GP.getPin25()
+      Pin25.out() 
       red_led_T_lock.acquire()
-      for n in range(times):
+      try:
+         for n in range(times):
             print 'RED high ' + str(n+1)
             time.sleep(0.5)
-            #print 'RED low'
+            Pin25.high()
+            my_dict["status"]["GPIO"][2]["value"] = Pin25.getValue()            
             time.sleep(0.5) 
-            #print 
-      red_led_T_lock.release() 
+            Pin25.low() 
+            my_dict["status"]["GPIO"][2]["value"] = Pin25.getValue()  
+      finally:
+          Pin25.input()
+          Pin25.closePin()      
+          red_led_T_lock.release() 
+           
+  
 
 def yellow_led(times):
-      global yellow_led_T_lock
+      Pin24 = GP.getPin24()
+      Pin24.out() 
       yellow_led_T_lock.acquire()
-      for n in range(times):
+      try:
+         for n in range(times):
             print 'yellow high ' + str(n+1) 
             time.sleep(0.5)
-            #print 'RED low'
-            time.sleep(0.5) 
-            #print 
-      yellow_led_T_lock.release() 
-
-def green_led(times):
-      global green_led_T_lock
-      green_led_T_lock.acquire()
-      for n in range(times):
-            print 'green high ' + str(n+1)
+            Pin24.high()           
+            my_dict["status"]["GPIO"][1]["value"] = Pin24.getValue()  
             time.sleep(0.5)
-            #print 'RED low'
-            time.sleep(0.5) 
-            #print 
-      green_led_T_lock.release() 
-      
-#class red_led_loop(threading.Thread):
-#    def __init__(self, led, times):
-#        threading.Thread.__init__(self)
-#        self.times = times
-#    
-#    def run(self):
-#        global lock
-#        lock.acquire()
-#        try:
-#          for n in range(self.times):
-#            print 'RED high ', n+1
-#            time.sleep(0.1)
-#            #print 'RED low'
-#            time.sleep(0.1)
-#        finally:    
-#           lock.release()      
+            Pin24.low() 
+            my_dict["status"]["GPIO"][1]["value"] = Pin24.getValue()  
+      finally:
+          Pin24.input()
+          Pin24.closePin()      
+          yellow_led_T_lock.release() 
+         
+        
+def green_led(times):
+      Pin23 = GP.getPin23()
+      Pin23.out() 
+      green_led_T_lock.acquire()
+      try:
+          for n in range(times):
+                print 'green high ' + str(n+1)
+                time.sleep(0.5)
+                Pin23.high()
+                my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue()  
+                #gpio.digital_write(GPIO_green, GPIO.HIGH)
+                time.sleep(0.5)
+                Pin23.low()
+                my_dict["status"]["GPIO"][0]["value"] = Pin23.getValue()  
+                #gpio.digital_write(GPIO_green, GPIO.LOW)
+      finally:
+          Pin23.input()
+          Pin23.closePin()      
+          green_led_T_lock.release() 
+ 
 
 
 if __name__ == '__main__':
-     
      get_data = threading.Thread(target=processes)
      get_data.start()
 
-     app.run("localhost", threaded=True, debug=False, port=8040)
+     app.run("localhost", threaded=True, debug=False, port=8000)
      #print 'Started httpserver on port ' , PORT_NUMBER
