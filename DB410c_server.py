@@ -17,8 +17,11 @@ GP = GPIOProcessor()
 app = flask.Flask(__name__)
 
 ipaddress=socket.gethostbyname(socket.gethostname())
-print ipaddress
-PORT_NUMBER = 8040
+#print ipaddress
+
+my_ip = "localhost"
+my_port = 80
+
 count = 0
 red_led_T_lock = threading.Lock()
 yellow_led_T_lock = threading.Lock()
@@ -293,4 +296,4 @@ if __name__ == '__main__':
      get_data = threading.Thread(target=processes)
      get_data.start()
 
-     app.run("192.168.1.15", threaded=True, debug=False, port=80)
+     app.run(my_ip, threaded=True, debug=False, port=my_port)
